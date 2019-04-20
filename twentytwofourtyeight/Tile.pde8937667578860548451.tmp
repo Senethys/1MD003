@@ -37,21 +37,9 @@ class Tile {
         return x; 
       }
       
-     void moveUp() {
-      y = y - 1;  
-    }
-    
-     void moveDown() {
-      y = y + 1;  
-    }
-    
-         void moveRight() {
-      x = x + 1;  
-    }
-    
-         void moveLeft() {
-      x = x - 1;  
-    }
+      void moveUp() {
+      y = y - 1;
+      }
       
   
       void display() {
