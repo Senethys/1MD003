@@ -25,6 +25,7 @@ color buttonColor = color(81, 46, 95);
 color gridColor = color(229, 231, 233);
 color emptyColor = color(232, 248, 245);
 
+//Different states throughout the game.
 enum State 
 {
    start, won, running, over
@@ -32,15 +33,17 @@ enum State
     
 State gameState = State.start;    
 
+//Default function of Processing the sets the 
 void setup() {
   size(500, 500); //size(len, len);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
-  restart();
-  surface.setResizable(true);
+  restart(); //Spawn to random tiles and the rest to 0. Set scores and game state.
+  surface.setResizable(true); //So that can expnded and not. 
   textFont(createFont("Courier", 40));
 }
 
+//Prepares the game for playing: scores and tiles set to initial state.
 void restart() {
   tiles = new int[side][side];
   spawn();
@@ -50,6 +53,7 @@ void restart() {
   gameState = State.running;
 }
 
+//Iterates through the tiles, find empty spots and
 void spawn() 
 {
   ArrayList<Integer> xs = new ArrayList<Integer>(), ys = new ArrayList<Integer>();
@@ -67,9 +71,11 @@ void spawn()
   int rand = (int)random(0, xs.size());
   int y = ys.get(rand);
   int x = xs.get(rand);
+  //Spawn random tile with a higher chance of a 2 tile.
   tiles[y][x] = random(0, 1) < .9 ? 2 : 4;
 }
 
+//This is a default Processing function that continiously draws - paints items on the board.
 void draw() {
   background(255);
   noStroke();
@@ -119,11 +125,15 @@ void draw() {
     if(mousePressed) restart(); 
   }
 }
+
+//This specifies the drawing of a tile.
 void rectt(float x, float y, float w, float h, float r, color c) 
 { 
   fill(c); 
   rect(x,y,w,h,r);  
 }
+
+//This specifies the drawing of the numbers in the tiles.
 void textt(String t, float x, float y, float w, float h, color c, float s, int align) 
 {
   fill(c); 
@@ -132,6 +142,7 @@ void textt(String t, float x, float y, float w, float h, color c, float s, int a
   text(t,x,y,w,h);  
 }
 
+//Specifies movement 
 void keyPressed() {
   if (gameState == State.running) {
     //int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0); 
@@ -164,6 +175,7 @@ void keyPressed() {
   }
 }
 
+//?????????????????????????????????????????
 boolean gameover() {
   int[] dx = {1, -1, 0, 0}, dy = {0, 0, 1, -1};
   boolean out = true;
@@ -175,6 +187,8 @@ boolean gameover() {
   return out;
 }
 
+
+//Specifies what direction mean, speaking coordinates. 
 int[][] moveUp() {
   return go(-1, 0, true);
 }
@@ -191,6 +205,7 @@ int[][] moveRight() {
    return go(0, 1, true);
 }
 
+//Algortihm for movement. 
 int[][] go(int dy, int dx, boolean updatescore) 
 {
      int[][] copyBoard = new int[4][4];
