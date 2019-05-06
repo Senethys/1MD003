@@ -1,4 +1,8 @@
 import java.util.Stack;
+import processing.sound.*;
+
+SoundFile cheerFile;
+SoundFile gameOverFile;
 
 int score = 0;
 int side = 4;
@@ -32,28 +36,28 @@ enum State
 }
     
 State gameState = State.start;    
-
-//Default function of Processing the sets the 
+//Default processing function 
 void setup() {
   size(500, 500); //size(len, len);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
-  restart(); //Spawn to random tiles and the rest to 0. Set scores and game state.
-  surface.setResizable(true); //So that can expnded and not. 
+  restart();
+  surface.setResizable(true);
   textFont(createFont("Courier", 40));
+  cheerFile = new SoundFile(this, "Cheering.mp3");
+  gameOverFile = new SoundFile(this, "GameOver.mp3");
 }
-
-//Prepares the game for playing: scores and tiles set to initial state.
+// Set the score and tiles to initial state.
 void restart() {
   tiles = new int[side][side];
   spawn();
   spawn();
+  undoStack.push(tiles);
   score = 0;
   highest = 2;
   gameState = State.running;
 }
-
-//Iterates through the tiles, find empty spots and
+//This cretes a new tile and puts it in a random empty spot on the board
 void spawn() 
 {
   ArrayList<Integer> xs = new ArrayList<Integer>(), ys = new ArrayList<Integer>();
@@ -71,10 +75,8 @@ void spawn()
   int rand = (int)random(0, xs.size());
   int y = ys.get(rand);
   int x = xs.get(rand);
-  //Spawn random tile with a higher chance of a 2 tile.
   tiles[y][x] = random(0, 1) < .9 ? 2 : 4;
 }
-
 //This is a default Processing function that continiously draws - paints items on the board.
 void draw() {
   background(255);
@@ -100,6 +102,15 @@ void draw() {
   {
     tiles = undoStack.pop();
     redoStack.push(tiles);
+    //if(!undoStack.empty())
+    //  tiles = undoStack.pop();
+    for(int i = 0; i < 4; i++)
+    {
+      for(int j = 0; j < 4; j++)
+      {
+        print(tiles[i][j]);
+      }
+    } 
     draw();
   }  
   
@@ -117,22 +128,22 @@ void draw() {
   if(gameState == State.over) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
+    gameOverFile.play();
     if(mousePressed) restart(); 
   }
   if(gameState == State.won) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("You won! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
+    cheerFile.play();
     if(mousePressed) restart(); 
   }
 }
-
 //This specifies the drawing of a tile.
 void rectt(float x, float y, float w, float h, float r, color c) 
 { 
   fill(c); 
   rect(x,y,w,h,r);  
 }
-
 //This specifies the drawing of the numbers in the tiles.
 void textt(String t, float x, float y, float w, float h, color c, float s, int align) 
 {
@@ -142,19 +153,32 @@ void textt(String t, float x, float y, float w, float h, color c, float s, int a
   text(t,x,y,w,h);  
 }
 
-//Specifies movement 
+//detects the key presses on the keyboard
 void keyPressed() {
   if (gameState == State.running) {
     //int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0); 
+    undoStack.push(tiles);
     int[][] newb = null ;
     if(keyCode == UP)
+    {
       newb = moveUp();
+      redoStack.clear();
+    }
     else if(keyCode == DOWN)
+    {
       newb = moveDown();
+      redoStack.clear();
+    }
      else if(keyCode == LEFT)
+     {
       newb = moveLeft(); 
+      redoStack.clear();
+     }
     else if(keyCode == RIGHT)
+    {
       newb = moveRight();
+      redoStack.clear();
+    }
     if (newb != null) 
     {
       tiles = newb;
@@ -175,7 +199,7 @@ void keyPressed() {
   }
 }
 
-//?????????????????????????????????????????
+//checks if there is any move available
 boolean gameover() {
   int[] dx = {1, -1, 0, 0}, dy = {0, 0, 1, -1};
   boolean out = true;
@@ -188,7 +212,6 @@ boolean gameover() {
 }
 
 
-//Specifies what direction mean, speaking coordinates. 
 int[][] moveUp() {
   return go(-1, 0, true);
 }
@@ -248,7 +271,6 @@ int[][] go(int dy, int dx, boolean updatescore)
               {
                 copyBoard[ty][tx] = copyBoard[y][x];
                 moved = true;
-                undoStack.push(copyBoard);
               }
               if (moved) 
                 copyBoard[y][x] = 0;
