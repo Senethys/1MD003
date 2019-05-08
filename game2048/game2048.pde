@@ -4,21 +4,21 @@ import processing.sound.*;
 SoundFile cheerFile;
 SoundFile gameOverFile;
 
-int score = 0;
 int side = 4;
-int [][] tiles = new int [side][side];
-int pad = 20, bs = 100; 
-int len = pad*(side+1)+bs*side;
 int target = 2048;
 int highest = 2;
+int[][] board = new int[side][side];
+int [][] copyBoard = new int[side][side];
+int [][] prev[] = new int[side][side][3];
+int pad = 20, bs = 100, len = pad * (side+1)+ bs * side, score = 0, animStart, animLength = 10;
 
 float undoButtonX = 70 , undoButtonY = 5, undoButtonWidth = 50, undoButtonHeight = 10;
 float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeight = 10;
 Button undoButton, redoButton;
 
 Stack<int[][]> undoStack = new Stack();
-Stack<int[][]> redoStack = new Stack(); 
-        
+Stack<int[][]> redoStack = new Stack();
+
 color[] colorTable = {
         color(232, 248, 245),color(232, 248, 245), color(209, 242, 235),  color(163, 228, 215),  
         color(118, 215, 196), color(72, 201, 176), color(26, 188, 156), color(23, 165, 137),
@@ -34,93 +34,105 @@ enum State
 {
    start, won, running, over
 }
-    
-State gameState = State.start;    
-//Default processing function 
+
+State gameState = State.start;
+
 void setup() {
-  size(500, 500); //size(len, len);
+  size(500,500);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
-  restart();
-  surface.setResizable(true);
-  textFont(createFont("Courier", 40));
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
+  restart();
+  textFont(createFont("Courier",40));
 }
-// Set the score and tiles to initial state.
 void restart() {
-  tiles = new int[side][side];
+  board = new int[4][4];
+  copyBoard = new int[4][4];
   spawn();
   spawn();
-  undoStack.push(tiles);
+  undoStack.push(board);
   score = 0;
   highest = 2;
   gameState = State.running;
 }
-//This cretes a new tile and puts it in a random empty spot on the board
-void spawn() 
-{
+
+void spawn() {
   ArrayList<Integer> xs = new ArrayList<Integer>(), ys = new ArrayList<Integer>();
-  for (int j = 0 ; j < side; j++) 
-  {
-    for (int i = 0 ; i < side; i++) 
-    {
-      if (tiles[j][i]==0) 
-      {
-        xs.add(i);
-        ys.add(j);
-      }
-    }
+  for (int j = 0 ; j < side; j++) for (int i = 0 ; i < side; i++) if (board[j][i]==0) {
+    xs.add(i);
+    ys.add(j);
   }
-  int rand = (int)random(0, xs.size());
-  int y = ys.get(rand);
-  int x = xs.get(rand);
-  tiles[y][x] = random(0, 1) < .9 ? 2 : 4;
+  int rnd = (int)random(0, xs.size()), y = ys.get(rnd), x = xs.get(rnd);
+  board[y][x] = random(0,1) < .5 ? 2 : 4;
+  prev[y][x][0] = -1;
 }
-//This is a default Processing function that continiously draws - paints items on the board.
+
 void draw() {
   background(255);
   noStroke();
-  //rectt(undoButtonX,undoButtonY,undoButtonWidth, undoButtonHeight,10, color(gridColor));
-  
-  rectt(0,0,width,height,10,color(gridColor));
-  for (int j = 0 ; j < side; j++) 
-    for (int i = 0 ; i < side; i++) {
+  rectt(0, 0, width, height, 10, color(gridColor));
+  for (int j = 0 ; j < side; j++) {
+    for (int i = 0 ; i < side; i++) 
+    {
       fill(color(emptyColor));
       rect(pad+(pad+bs)*i, pad+(pad+bs)*j, bs, bs, 5);
     }
-  for (int j = 0 ; j < side; j++) 
-    for (int i = 0 ; i < side; i++) {
-      float x = pad+(pad+bs)*i, y=pad+(pad+bs)*j;
-      if (tiles[j][i] > 0) {
-        rectt(x, y, bs, bs, 5, colorTable[(int) (Math.log(tiles[j][i]) / Math.log(2)) + 1]);
-        textt(""+tiles[j][i], x, y + 22, bs, bs, color(0), 40, CENTER);
-      }
-    }
-    
-  if (undoButton.buttonPressed() && !undoStack.empty()) 
-  {
-    tiles = undoStack.pop();
-    redoStack.push(tiles);
-    //if(!undoStack.empty())
-    //  tiles = undoStack.pop();
-    for(int i = 0; i < 4; i++)
-    {
-      for(int j = 0; j < 4; j++)
-      {
-        print(tiles[i][j]);
-      }
-    } 
-    draw();
-  }  
+  }
+  float gscore = 0, textvoff = 22;
   
-  if (redoButton.buttonPressed() && !redoStack.empty()) 
-  {
-    tiles = redoStack.pop();
-    undoStack.push(tiles);
-    draw();
-  }  
-    
+  for (int j = 0 ; j < side; j++) {
+    for (int i = 0 ; i < side; i++) {
+      float xt = pad+(pad+bs)*i, yt = pad+(pad+bs)*j;
+      float x = xt, y=yt;
+      int val = board[j][i];
+      float dur = (frameCount - animStart)*1.0/animLength;
+      
+      if (frameCount - animStart < animLength && prev[j][i][0]>0) 
+      {
+        int prevy = pad+(pad+bs)*prev[j][i][1];
+        int prevx = pad+(pad+bs)*prev[j][i][2];
+        x = (x - prevx)*dur + prevx;
+        y = (y - prevy)*dur + prevy;
+        if (prev[j][i][0]>1) 
+        {
+          val = prev[j][i][0];
+          fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
+          rect(xt, yt, bs, bs, 5);
+          fill(0);
+          textAlign(CENTER);
+          textSize(40);
+          text(""+prev[j][i][0], xt, yt + textvoff, bs, bs);
+        }
+      }
+      
+      if (frameCount - animStart > animLength || prev[j][i][0] >= 0) 
+      {
+        if (prev[j][i][0]>=2) {
+          float grow = abs(0.5-dur)*2;
+          if(frameCount - animStart > animLength*3) grow = 1;
+          else gscore = grow;
+          fill(0,0,255,100); // draws the blue thing around the tile after collision
+          rect(x-2*grow, y-2*grow, bs+4*grow, bs+4*grow, 5);
+        }
+        else  if (prev[j][i][0]==1) {
+          fill(255,100);
+          rect(x-2, y-2, bs+4, bs+4, 5);
+        }
+        fill(200);
+        if (val > 0) {
+          fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
+          rect(x, y, bs, bs, 5);
+          fill(0);
+          textAlign(CENTER);
+          textSize(40);
+          text(""+val, x, y + textvoff, bs, bs);
+        }
+      }
+      
+    }
+  }
+  
   undoButton.Draw();
   redoButton.Draw();
   
@@ -129,21 +141,30 @@ void draw() {
     rectt(0,0,width,height,0,color(255,100)); 
     textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
     gameOverFile.play();
-    if(mousePressed) restart(); 
+    if(mousePressed) {
+      gameOverFile.stop();
+      restart(); 
+    }
   }
   if(gameState == State.won) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("You won! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
     cheerFile.play();
-    if(mousePressed) restart(); 
+    if(mousePressed)
+    {
+      cheerFile.stop();
+      restart(); 
+    }
   }
 }
+
 //This specifies the drawing of a tile.
 void rectt(float x, float y, float w, float h, float r, color c) 
 { 
   fill(c); 
   rect(x,y,w,h,r);  
 }
+
 //This specifies the drawing of the numbers in the tiles.
 void textt(String t, float x, float y, float w, float h, color c, float s, int align) 
 {
@@ -153,42 +174,60 @@ void textt(String t, float x, float y, float w, float h, color c, float s, int a
   text(t,x,y,w,h);  
 }
 
-//detects the key presses on the keyboard
+void mousePressed()
+{
+  if (undoButton.buttonPressed() && !undoStack.empty()) 
+  {
+    board = undoStack.pop();
+    redoStack.push(board);
+    draw();
+  }  
+  
+  if (redoButton.buttonPressed() && !redoStack.empty()) 
+  {
+    board = redoStack.pop();
+    undoStack.push(board);
+    draw();
+  }  
+}
+
 void keyPressed() {
-  if (gameState == State.running) {
-    //int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0); 
-    undoStack.push(tiles);
-    int[][] newb = null ;
+  if(gameState == State.running) {
+    int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0);
+    undoStack.push(board);
+    int[][] newBoard = null;
+    
     if(keyCode == UP)
     {
-      newb = moveUp();
+      newBoard = moveUp();
       redoStack.clear();
     }
     else if(keyCode == DOWN)
     {
-      newb = moveDown();
+      newBoard = moveDown();
       redoStack.clear();
     }
      else if(keyCode == LEFT)
      {
-      newb = moveLeft(); 
+      newBoard = moveLeft(); 
       redoStack.clear();
      }
     else if(keyCode == RIGHT)
     {
-      newb = moveRight();
+      newBoard = moveRight();
       redoStack.clear();
     }
-    if (newb != null) 
-    {
-      tiles = newb;
+    
+    if (newBoard != null) {
+      redoStack.clear();
+      board = newBoard;
       spawn();
       for(int i = 0; i < side; i++)
       {
         for(int j = 0; j < side; j++)
         {
-          if(newb[i][j] > highest)
-            highest = newb[i][j];
+          if(newBoard[i][j] > highest)
+            highest = newBoard[i][j];
         }
       }
     }
@@ -199,85 +238,95 @@ void keyPressed() {
   }
 }
 
-//checks if there is any move available
-boolean gameover() {
-  int[] dx = {1, -1, 0, 0}, dy = {0, 0, 1, -1};
-  boolean out = true;
-  for (int i = 0 ; i < 4; i++) 
-  {
-    if (go(dy[i], dx[i], false) != null) 
-      out = false;
-  }
-  return out;
-}
-
-
 int[][] moveUp() {
-  return go(-1, 0, true);
+  return go(-1, 0);
 }
  
 int[][] moveDown() {
-   return go(1, 0, true);
+   return go(1, 0);
 }
  
 int[][] moveLeft() {
-   return go(0, -1, true);
+   return go(0, -1);
 }
  
 int[][] moveRight() {
-   return go(0, 1, true);
+   return go(0, 1);
 }
 
-//Algortihm for movement. 
-int[][] go(int dy, int dx, boolean updatescore) 
+boolean gameover() 
 {
-     int[][] copyBoard = new int[4][4];
-     for (int j = 0 ; j < 4; j++) 
-     {
-       for (int i = 0 ; i < 4; i++) 
-       {
-         copyBoard[j][i] = tiles[j][i];
-       }
-     }
-     boolean moved = false; 
-     if (dx != 0 || dy != 0) 
-     {
-        int d =  dx != 0 ? dx : dy;
-        for (int perp = 0; perp < side; perp++) 
-        {
-          for (int tang = (d > 0 ? side - 2 : 1); tang != (d > 0 ? -1 : side); tang-=d) 
-          {
-              int y = dx != 0 ? perp : tang, x = dx != 0 ? tang : perp, ty = y, tx = x;
-              if (copyBoard[y][x]==0) continue;
-              for (int i=(dx != 0 ? x : y)+d; i!= (d > 0 ? side : -1); i+=d) 
-              {
-                int r = dx != 0 ? y : i, c = dx != 0 ? i : x;
-                if (copyBoard[r][c] != 0 && copyBoard[r][c] != copyBoard[y][x]) 
-                  break;
-                if (dx != 0) 
-                  tx = i; 
-                else 
-                  ty = i;
-              }
-              if ( (dx != 0 && tx == x) || (dy != 0 && ty == y)) 
-                continue;
-              else if (copyBoard[ty][tx]==copyBoard[y][x]) 
-              {
-                copyBoard[ty][tx] *= 2;
-                if(updatescore) score += copyBoard[ty][tx];
-                  moved = true;
-              }
-              else if ( (dx != 0 && tx != x) || (dy != 0 && ty != y)) 
-              {
-                copyBoard[ty][tx] = copyBoard[y][x];
-                moved = true;
-              }
-              if (moved) 
-                copyBoard[y][x] = 0;
-           } 
-        }
-      }
-  
-  return moved ? copyBoard : null;
- }
+  int[] dx = {    1, -1, 0, 0  } ;
+  int[] dy = {    0, 0, 1, -1  };
+  int[][][] prevbak = prev;
+  boolean out = true;
+  int prevscore = score;
+  for (int i = 0 ; i < 4; i++) 
+  {
+    if (go(dy[i], dx[i]) != null) 
+      out = false;
+  }
  
+  prev = prevbak;
+  score = prevscore;
+  return out;
+}
+int[][] go(int dy, int dx) 
+{
+  int[][] copyBoard = new int[4][4];
+  for (int j = 0 ;j < 4; j++) 
+  {
+    for (int i = 0 ; i < 4; i++) 
+    {
+      copyBoard[j][i] = board[j][i];
+    }
+  }
+  prev = new int[4][4][3];
+  boolean moved = false; 
+  if (dx != 0 || dy != 0) 
+  {
+    int d =  dx != 0 ? dx : dy;
+    for (int perp = 0; perp < side; perp++) 
+    {
+      for (int along = (d > 0 ? side - 2 : 1); along != (d > 0 ? -1 : side); along-=d) 
+      {
+        int y = dx != 0 ? perp : along, x = dx != 0 ? along : perp, ty = y, tx = x;
+        if (copyBoard[y][x]==0) continue;
+        for (int i=(dx != 0 ? x : y)+d; i!= (d > 0 ? side : -1); i+=d) 
+        {
+          int r = dx != 0 ? y : i, c = dx != 0 ? i : x;
+          if (copyBoard[r][c] != 0 && copyBoard[r][c] != copyBoard[y][x]) 
+            break;
+          if (dx != 0) 
+            tx = i; 
+          else 
+            ty = i;
+        }
+        if ( (dx != 0 && tx == x) || (dy != 0 && ty == y)) 
+          continue;
+        else if (copyBoard[ty][tx]==copyBoard[y][x]) 
+        {
+          prev[ty][tx][0] = copyBoard[ty][tx];          
+          copyBoard[ty][tx] *= 2;
+          score += copyBoard[ty][tx];
+          moved = true;
+        }
+        else if ( (dx != 0 && tx != x) || (dy != 0 && ty != y)) 
+        {
+          prev[ty][tx][0] = 1;
+          copyBoard[ty][tx] = copyBoard[y][x];
+          moved = true;
+        }
+      if (moved) 
+      {
+        prev[ty][tx][1] = y;
+        prev[ty][tx][2] = x;
+        copyBoard[y][x] = 0;
+      }
+    }
+   }
+  }
+  if (!moved) return null;
+  animStart = frameCount;
+  return copyBoard;
+}
