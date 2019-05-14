@@ -3,6 +3,7 @@ import processing.sound.*;
 
 SoundFile cheerFile;
 SoundFile gameOverFile;
+SoundFile woodFile;
 
 int side = 4;
 int target = 2048;
@@ -43,6 +44,7 @@ void setup() {
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
+  woodFile = new SoundFile(this, "wood.wav"); //ADD THIS SOUND EFFECT TO COLLISION
   restart();
   textFont(createFont("Courier",40));
 }
@@ -98,7 +100,7 @@ void draw() {
         {
           val = prev[j][i][0];
           fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
-          rect(xt, yt, bs, bs, 5);
+          rect(xt, yt, bs, bs, 5); 
           fill(0);
           textAlign(CENTER);
           textSize(40);
