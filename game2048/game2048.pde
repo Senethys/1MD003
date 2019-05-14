@@ -40,25 +40,29 @@ enum State
      
 State gameState = State.start;     
  
-//Default Processing function  
+//Default Processing function is setup(). Settings are needed for size as variables  
 void settings() { 
 
 //A solution using dialog instead,
-//String[] options = {"Desktop Version", "Mobile Phone Version"};
-//int x = JOptionPane.showOptionDialog(null, "Select the version of the game you want to play.",
-//"Before you start playing...",
-//JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+String[] options = {"Desktop Version", "Mobile Phone Version"};
+int x = JOptionPane.showOptionDialog(null, "Select the version of the game you want to play.",
+"Before you start playing...",
+JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
-// if(x==0) {
-//   fullScreen();
-// }  else {
-//   screenSizeX = 400;
-//   screenSizeY = 500;
-// 
+int screenSizeY = 0;
+int screenSizeX = 0;
 
-  Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-  int screenSizeY = (int)screenSize.getHeight();
-  int screenSizeX = (int)screenSize.getWidth();
+ if(x==0) {
+   fullScreen();
+ }  else {
+   screenSizeX = 500;
+   screenSizeY = 500;
+ }
+
+//A solution using dynamic size
+  //Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+  //int screenSizeY = (int)screenSize.getHeight();
+  //int screenSizeX = (int)screenSize.getWidth();
 
   size(screenSizeX, screenSizeY); //size(len, len); 
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight); 
@@ -71,7 +75,7 @@ void settings() {
   
   cheerFile = new SoundFile(this, "Cheering.mp3"); 
   gameOverFile = new SoundFile(this, "GameOver.mp3"); 
-  woodFile = new SoundFile(this, "wood.wav"); 
+  woodFile = new SoundFile(this, "wood.wav"); //Remembr TO ADD THIS FILE TO THE COLLISION CODE!
 } 
 
 // Set the score and tiles to initial state. 
