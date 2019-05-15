@@ -1,10 +1,12 @@
-import java.util.Stack;
-import processing.sound.*;
-import java.awt.*;
+//2048 game by x and y.
 
-SoundFile cheerFile;
-SoundFile gameOverFile;
-SoundFile woodFile;
+import java.util.Stack; //For undo redo
+import processing.sound.*; //For sounds
+import java.awt.*; // For screen dimensions
+
+SoundFile cheerFile; //When win 
+SoundFile gameOverFile; //sound when fail
+SoundFile woodFile; //Sound when tiles collide.
 
 //Get the screen size of the device.
 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -12,23 +14,33 @@ int screenSizeY = (int)screenSize.getHeight();
 int screenSizeX = (int)screenSize.getWidth();
 
 
-int side = 4;
-int target = 2048;
-int highest = 2;
-int[][] board = new int[side][side];
-int [][] copyBoard = new int[side][side];
-int [][] prev[] = new int[side][side][3];
-// pad = Distance between tiles
-// bs = sie of the tiles            //100
-int pad = (screenSizeX / 30) , bs = (screenSizeX - screenSizeY) / 5, len = pad * (side+1)+ bs * side, score = 0, animStart, animLength = 10;
+int side = 4; //Amount of tiles per axis
+int target = 2048; //Goal score
+int highest = 2; //Current (and minimal) score.
 
+int[][] board = new int[side][side]; //The board with values
+int [][] copyBoard = new int[side][side]; //A copy of the board so it can be modifed when iterating over it.
+int [][] prev[] = new int[side][side][3]; //Saved state? 
+
+int pad = (screenSizeX / 30); // pad = Distance between tiles (Original value = 20)
+int bs = (screenSizeX - screenSizeY) / 5; // bs = sie of the tiles (original value 100)
+//int len = pad * (side+1)+ bs * side; This wasnt used for some reason 
+int score = 0; 
+int animStart = 10; //Doesnt seem to do anything
+int animLength = 10; //How long the animation will last
+
+//Button sizes.
 float undoButtonX = 70 , undoButtonY = 5, undoButtonWidth = 50, undoButtonHeight = 10;
 float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeight = 10;
-Button undoButton, redoButton;
 
+//Button declarations
+Button undoButton, redoButton, tutorialButton;
+
+//Undo redo stacks.
 Stack<int[][]> undoStack = new Stack();
 Stack<int[][]> redoStack = new Stack();
 
+//Defines colours for the scores.
 color[] colorTable = {
         color(232, 248, 245),color(232, 248, 245), color(209, 242, 235),  color(163, 228, 215),  
         color(118, 215, 196), color(72, 201, 176), color(26, 188, 156), color(23, 165, 137),
@@ -42,32 +54,39 @@ color emptyColor = color(232, 248, 245);
 //Different states throughout the game.
 enum State 
 {
-   start, won, running, over
+   start, won, running, tutorial, over
 }
 
 State gameState = State.start;
-
 
 
 void settings() {
   size(screenSizeX / 2, screenSizeY);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
+  tutorialButton = new Button("Tutorial", redoButtonX + 70, redoButtonY, redoButtonWidth, redoButtonHeight);
+  
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav"); //ADD THIS SOUND EFFECT TO COLLISION
+  //Start the game.
   restart();
-
+  
+  //Prints values of the screen for debgging
   println(screenSizeY," ", screenSizeX);
-  print((screenSizeX - screenSizeY) / 5);
 }
+
+//Setup is needed here so that textFont and size can be set.
 void setup() {
     //This option only works with setup();
   textFont(createFont("Courier",50));
 }
+
 void restart() {
   board = new int[4][4];
   copyBoard = new int[4][4];
+  
+  //Spawn 2 random tiles
   spawn();
   spawn();
   undoStack.push(board);
@@ -76,6 +95,7 @@ void restart() {
   gameState = State.running;
 }
 
+//Att a random tile to the board.
 void spawn() {
   ArrayList<Integer> xs = new ArrayList<Integer>(), ys = new ArrayList<Integer>();
   for (int j = 0 ; j < side; j++) for (int i = 0 ; i < side; i++) if (board[j][i]==0) {
@@ -84,12 +104,15 @@ void spawn() {
   }
   int rnd = (int)random(0, xs.size()), y = ys.get(rnd), x = xs.get(rnd);
   board[y][x] = random(0,1) < .5 ? 2 : 4;
+  //Amount of of open tiles - 1
   prev[y][x][0] = -1;
 }
 
 void draw() {
   background(255);
   noStroke();
+  
+  //Paints empty tile space 
   rectt(0, 0, width, height, 10, color(gridColor));
   for (int j = 0 ; j < side; j++) {
     for (int i = 0 ; i < side; i++) 
@@ -98,21 +121,27 @@ void draw() {
       rect(pad+(pad+bs)*i, pad+(pad+bs)*j, bs, bs, 5);
     }
   }
-  float gscore = 0, textvoff = 22;
+  float gscore = 0;
   
+  //Offsets the numbers on the tiles to the center
+  float textvoff = 31; //Original value 22
+  
+  //Paints the non-empty tiles according to specified distance and ads value to it
   for (int j = 0 ; j < side; j++) {
     for (int i = 0 ; i < side; i++) {
       float xt = pad+(pad+bs)*i, yt = pad+(pad+bs)*j;
       float x = xt, y=yt;
       int val = board[j][i];
+
       float dur = (frameCount - animStart)*1.0/animLength;
-      
+          //frame    -     10     <    10     &&     
       if (frameCount - animStart < animLength && prev[j][i][0]>0) 
       {
         int prevy = pad+(pad+bs)*prev[j][i][1];
         int prevx = pad+(pad+bs)*prev[j][i][2];
         x = (x - prevx)*dur + prevx;
         y = (y - prevy)*dur + prevy;
+        
         if (prev[j][i][0]>1) 
         {
           val = prev[j][i][0];
@@ -122,6 +151,7 @@ void draw() {
           textAlign(CENTER);
           textSize(40);
           text(""+prev[j][i][0], xt, yt + textvoff, bs, bs);
+          
         }
       }
       
@@ -132,6 +162,7 @@ void draw() {
           if(frameCount - animStart > animLength*3) grow = 1;
           else gscore = grow;
           fill(0,0,255,100); // draws the blue thing around the tile after collision
+          woodFile.play();
           rect(x-2*grow, y-2*grow, bs+4*grow, bs+4*grow, 5);
         }
         else  if (prev[j][i][0]==1) {
@@ -154,6 +185,7 @@ void draw() {
   
   undoButton.Draw();
   redoButton.Draw();
+  tutorialButton.Draw();
   
   textt("score: "+score,10,5,100,50,color(0),10.0, LEFT);
   if(gameState == State.over) { 
@@ -174,6 +206,10 @@ void draw() {
       cheerFile.stop();
       restart(); 
     }
+  }
+  
+  if(gameState == State.tutorial) {
+    restart();
   }
 }
 
@@ -208,6 +244,10 @@ void mousePressed()
     undoStack.push(board);
     draw();
   }  
+  
+  if (tutorialButton.buttonPressed()) {
+    playTutorial();
+  }
 }
 
 void keyPressed() {
@@ -348,4 +388,13 @@ int[][] go(int dy, int dx)
   if (!moved) return null;
   animStart = frameCount;
   return copyBoard;
+}
+
+//Tutorial restarts the game with extra graphics.
+void playTutorial() {
+  restart();
+  //Tutorial Code Here
+  
+
+  draw();
 }
