@@ -57,10 +57,13 @@ void settings() {
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav"); //ADD THIS SOUND EFFECT TO COLLISION
   restart();
-  //This option only works with setup();
-  //textFont(createFont("Courier",40));
+
   println(screenSizeY," ", screenSizeX);
   print((screenSizeX - screenSizeY) / 5);
+}
+void setup() {
+    //This option only works with setup();
+  textFont(createFont("Courier",50));
 }
 void restart() {
   board = new int[4][4];
