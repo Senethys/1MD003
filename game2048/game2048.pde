@@ -1,9 +1,16 @@
 import java.util.Stack;
 import processing.sound.*;
+import java.awt.*;
 
 SoundFile cheerFile;
 SoundFile gameOverFile;
 SoundFile woodFile;
+
+//Get the screen size of the device.
+Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+int screenSizeY = (int)screenSize.getHeight();
+int screenSizeX = (int)screenSize.getWidth();
+
 
 int side = 4;
 int target = 2048;
@@ -11,7 +18,9 @@ int highest = 2;
 int[][] board = new int[side][side];
 int [][] copyBoard = new int[side][side];
 int [][] prev[] = new int[side][side][3];
-int pad = 20, bs = 100, len = pad * (side+1)+ bs * side, score = 0, animStart, animLength = 10;
+// pad = Distance between tiles
+// bs = sie of the tiles            //100
+int pad = (screenSizeX / 30) , bs = (screenSizeX - screenSizeY) / 5, len = pad * (side+1)+ bs * side, score = 0, animStart, animLength = 10;
 
 float undoButtonX = 70 , undoButtonY = 5, undoButtonWidth = 50, undoButtonHeight = 10;
 float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeight = 10;
@@ -38,15 +47,20 @@ enum State
 
 State gameState = State.start;
 
-void setup() {
-  size(500,500);
+
+
+void settings() {
+  size(screenSizeX / 2, screenSizeY);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav"); //ADD THIS SOUND EFFECT TO COLLISION
   restart();
-  textFont(createFont("Courier",40));
+  //This option only works with setup();
+  //textFont(createFont("Courier",40));
+  println(screenSizeY," ", screenSizeX);
+  print((screenSizeX - screenSizeY) / 5);
 }
 void restart() {
   board = new int[4][4];
