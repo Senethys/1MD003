@@ -233,13 +233,14 @@ void mousePressed()
 {
   if (undoButton.buttonPressed() && !undoStack.empty()) 
   {
-    board = undoStack.pop();
     redoStack.push(board);
+    board = undoStack.pop();
     draw();
   }  
   
   if (redoButton.buttonPressed() && !redoStack.empty()) 
   {
+    gameOverFile.play();
     board = redoStack.pop();
     undoStack.push(board);
     draw();
