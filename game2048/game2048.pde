@@ -162,7 +162,10 @@ void draw() {
           if(frameCount - animStart > animLength*3) grow = 1;
           else gscore = grow;
           fill(0,0,255,100); // draws the blue thing around the tile after collision
-          woodFile.play();
+          if(!woodFile.isPlaying()) {
+              woodFile.play();
+          }
+
           rect(x-2*grow, y-2*grow, bs+4*grow, bs+4*grow, 5);
         }
         else  if (prev[j][i][0]==1) {
@@ -190,8 +193,12 @@ void draw() {
   textt("score: "+score,10,5,100,50,color(0),10.0, LEFT);
   if(gameState == State.over) { 
     rectt(0,0,width,height,0,color(255,100)); 
-    textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
-    gameOverFile.play();
+    textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER);
+    if(!gameOverFile.isPlaying()){
+        gameOverFile.play();
+
+    }
+    
     if(mousePressed) {
       gameOverFile.stop();
       restart(); 
