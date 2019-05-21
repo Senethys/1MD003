@@ -1,12 +1,12 @@
 //2048 game by x and y.
 
-import java.util.Stack; //For undo redo
-import processing.sound.*; //For sounds
-import java.awt.*; // For screen dimensions
+import java.util.Stack;     //For undo redo
+import processing.sound.*;  //For sounds
+import java.awt.*;          // For screen dimensions
 
-SoundFile cheerFile; //When win 
+SoundFile cheerFile;    //When win 
 SoundFile gameOverFile; //sound when fail
-SoundFile woodFile; //Sound when tiles collide.
+SoundFile woodFile;     //Sound when tiles collide.
 
 //Get the screen size of the device.
 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -14,30 +14,29 @@ int screenSizeY = (int)screenSize.getHeight();
 int screenSizeX = (int)screenSize.getWidth();
 
 
-int side = 4; //Amount of tiles per axis
+int side = 4;      //Amount of tiles per axis
 int target = 2048; //Goal score
-int highest = 2; //Current (and minimal) score.
+int highest = 2;   //Current (and minimal) score.
 
-int[][] board = new int[side][side]; //The board with values
+int [][] board = new int[side][side];     //The board with values
 int [][] copyBoard = new int[side][side]; //A copy of the board so it can be modifed when iterating over it.
 int [][] prev[] = new int[side][side][3]; //Saved state? 
 
-int pad = (screenSizeX / 30); // pad = Distance between tiles (Original value = 20)
-int bs = (screenSizeX - screenSizeY) / 5; // bs = sie of the tiles (original value 100)
-//int len = pad * (side+1)+ bs * side; This wasnt used for some reason 
+int tileDistance = (screenSizeX / 30);             // tileDistance = Distance between tiles (Original value = 20)
+int tileSize = (screenSizeX - screenSizeY) / 5;    // tileSize = size of the tiles (original value 100)
 int score = 0; 
-int animStart = 10; //Doesnt seem to do anything
-int animLength = 10; //How long the animation will last
+int animStart = 10;   //Doesnt seem to do anything
+int animLength = 10;  //How long the animation will last
 
 //Button sizes.
 float undoButtonX = 70 , undoButtonY = 5, undoButtonWidth = 50, undoButtonHeight = 10;
 float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeight = 10;
 
-//Button declarations
-Button undoButton, redoButton, tutorialButton;
 
-//Undo redo stacks.
-Stack<int[][]> undoStack = new Stack();
+Button undoButton, redoButton, tutorialButton; //Button declarations
+
+
+Stack<int[][]> undoStack = new Stack(); //Undo redo stacks.
 Stack<int[][]> redoStack = new Stack();
 
 //Defines colours for the scores.
@@ -61,6 +60,9 @@ State gameState = State.start;
 
 
 void settings() {
+  if(screenSizeX < screenSizeY) {
+  //Indicates that this is a phone
+  }
   size(screenSizeX / 2, screenSizeY);
   undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
@@ -68,18 +70,18 @@ void settings() {
   
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
-  woodFile = new SoundFile(this, "wood.wav"); //ADD THIS SOUND EFFECT TO COLLISION
+  woodFile = new SoundFile(this, "wood.wav");
   //Start the game.
   restart();
   
   //Prints values of the screen for debgging
-  println(screenSizeY," ", screenSizeX);
+  println("Screen dimensions", screenSizeX,"x", screenSizeY);
 }
 
 //Setup is needed here so that textFont and size can be set.
 void setup() {
     //This option only works with setup();
-  textFont(createFont("Courier",50));
+  textFont(createFont("Courier", 50));
 }
 
 void restart() {
@@ -89,20 +91,48 @@ void restart() {
   //Spawn 2 random tiles
   spawn();
   spawn();
-  undoStack.push(board);
+  undoStack.push(board); //Push the state of the board to the undo stack.
   score = 0;
   highest = 2;
   gameState = State.running;
 }
 
-//Att a random tile to the board.
+//This determines where to spawn the random tile.
 void spawn() {
-  ArrayList<Integer> xs = new ArrayList<Integer>(), ys = new ArrayList<Integer>();
-  for (int j = 0 ; j < side; j++) for (int i = 0 ; i < side; i++) if (board[j][i]==0) {
-    xs.add(i);
-    ys.add(j);
+  //
+  ArrayList<Integer> xs = new ArrayList<Integer>();
+  ArrayList<Integer> ys = new ArrayList<Integer>();
+  
+  for (int j = 0 ; j < side; j++) {
+    for (int i = 0 ; i < side; i++) { 
+      if (board[j][i]==0) {
+        print(" ", board[i][j]);
+        xs.add(i);
+        ys.add(j);
+    } 
+    println(" ");
   }
-  int rnd = (int)random(0, xs.size()), y = ys.get(rnd), x = xs.get(rnd);
+}
+    
+  
+  println("X", xs);
+  println("Y", ys);
+    for (int j = 0 ; j < side; j++) {
+      for (int i = 0 ; i < side; i++) { 
+        print(" ", board[j][i]);
+      }
+      println(" ");
+    }
+  
+   println(" ");
+
+
+  
+  
+  
+  int rnd = (int)random(0, xs.size());
+  int y = ys.get(rnd);
+  int x = xs.get(rnd);
   board[y][x] = random(0,1) < .5 ? 2 : 4;
   //Amount of of open tiles - 1
   prev[y][x][0] = -1;
@@ -118,27 +148,28 @@ void draw() {
     for (int i = 0 ; i < side; i++) 
     {
       fill(color(emptyColor));
-      rect(pad+(pad+bs)*i, pad+(pad+bs)*j, bs, bs, 5);
+      rect(tileDistance+(tileDistance+tileSize)*i, tileDistance+(tileDistance+tileSize)*j, tileSize, tileSize, 5);
     }
   }
   float gscore = 0;
   
   //Offsets the numbers on the tiles to the center
-  float textvoff = 31; //Original value 22
-  
+  float textvoff = tileSize/3; //Original value 22
   //Paints the non-empty tiles according to specified distance and ads value to it
   for (int j = 0 ; j < side; j++) {
     for (int i = 0 ; i < side; i++) {
-      float xt = pad+(pad+bs)*i, yt = pad+(pad+bs)*j;
-      float x = xt, y=yt;
+      float xt = tileDistance+(tileDistance+tileSize)*i;
+      float yt = tileDistance+(tileDistance+tileSize)*j;
+      float x = xt;
+      float y = yt;
       int val = board[j][i];
 
       float dur = (frameCount - animStart)*1.0/animLength;
           //frame    -     10     <    10     &&     
       if (frameCount - animStart < animLength && prev[j][i][0]>0) 
       {
-        int prevy = pad+(pad+bs)*prev[j][i][1];
-        int prevx = pad+(pad+bs)*prev[j][i][2];
+        int prevy = tileDistance+(tileDistance+tileSize)*prev[j][i][1];
+        int prevx = tileDistance+(tileDistance+tileSize)*prev[j][i][2];
         x = (x - prevx)*dur + prevx;
         y = (y - prevy)*dur + prevy;
         
@@ -146,11 +177,11 @@ void draw() {
         {
           val = prev[j][i][0];
           fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
-          rect(xt, yt, bs, bs, 5); 
+          rect(xt, yt, tileSize, tileSize, 5); 
           fill(0);
           textAlign(CENTER);
           textSize(40);
-          text(""+prev[j][i][0], xt, yt + textvoff, bs, bs);
+          text(""+prev[j][i][0], xt, yt + textvoff, tileSize, tileSize);
           
         }
       }
@@ -165,21 +196,20 @@ void draw() {
           if(!woodFile.isPlaying()) {
               woodFile.play();
           }
-
-          rect(x-2*grow, y-2*grow, bs+4*grow, bs+4*grow, 5);
+          rect(x-2*grow, y-2*grow, tileSize+4*grow, tileSize+4*grow, 5);
         }
         else  if (prev[j][i][0]==1) {
           fill(255,100);
-          rect(x-2, y-2, bs+4, bs+4, 5);
+          rect(x-2, y-2, tileSize+4, tileSize+4, 5);
         }
         fill(200);
         if (val > 0) {
           fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
-          rect(x, y, bs, bs, 5);
+          rect(x, y, tileSize, tileSize, 5);
           fill(0);
           textAlign(CENTER);
           textSize(40);
-          text(""+val, x, y + textvoff, bs, bs);
+          text(""+val, x, y + textvoff, tileSize, tileSize);
         }
       }
       
@@ -194,9 +224,9 @@ void draw() {
   if(gameState == State.over) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER);
+ 
     if(!gameOverFile.isPlaying()){
         gameOverFile.play();
-
     }
     
     if(mousePressed) {
@@ -204,6 +234,7 @@ void draw() {
       restart(); 
     }
   }
+  
   if(gameState == State.won) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("You won! Click to restart", 0,height/2,width,50,color(0),30,CENTER); 
@@ -298,6 +329,7 @@ void keyPressed() {
         }
       }
     }
+    
     if(gameover()) 
       gameState = State.over;
     if(highest == target)
