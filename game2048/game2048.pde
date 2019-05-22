@@ -7,12 +7,16 @@ import java.awt.*;          // For screen dimensions
 SoundFile cheerFile;    //When win 
 SoundFile gameOverFile; //sound when fail
 SoundFile woodFile;     //Sound when tiles collide.
+PImage en_img;
+PImage se_img;
+
+
 
 //Get the screen size of the device.
 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 int screenSizeY = (int)screenSize.getHeight();
 int screenSizeX = (int)screenSize.getWidth();
-
+Language language = new Language();
 
 int side = 4;      //Amount of tiles per axis
 int target = 2048; //Goal score
@@ -73,6 +77,8 @@ void settings() {
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav");
+  en_img = loadImage("en.png");
+  se_img = loadImage("se.png");
   //Start the game.
   restart();
   
@@ -167,27 +173,27 @@ void draw() {
       
       if(tutorial) {
         switch(tutorialStep) {
-          case 1: textt("This game is about combining tiles! Try moving the tiles by using the one of arrow keys.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+          case 1: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
           break;
           
-          case 2: textt("As you could see, one or all tiles moved until they reached the border or another tile.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
-                  textt("Try moving them again in another direction.", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          case 2: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt(language.tutorial_subLanguage(tutorialStep), screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
           break; 
           
-          case 3: textt("Once you succesfully move or combine tiles, a new one will appear in an empty space.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
-                  textt("Press any arrow key to continue.", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          case 3: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt(language.tutorial_subLanguage(tutorialStep), screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
           break;
           
-          case 4: textt("Only the tiles with the same tile number will combine!", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
-                  textt("Try to combine some tiles", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          case 4: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt(language.tutorial_subLanguage(tutorialStep), screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
           break;
           
-          case 5: textt("Your goal is to combine enough tiles to reach number 2048!", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
-                  textt("But be carefull as to not run out of tile-space!", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          case 5: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt(language.tutorial_subLanguage(tutorialStep), screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
           break;
           
-          case 6: textt("You are on your way now.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
-                  textt("Good luck!", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          case 6: textt(language.tutorialLanguage(tutorialStep), screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt(language.tutorial_subLanguage(tutorialStep), screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
           break;
           
           case 7: tutorial = false;
@@ -246,6 +252,8 @@ void draw() {
         }
       }
     }
+      image(en_img, screenSizeX / 2.21, 5, 50, 50);
+
   }
   
   //Draw buttons
