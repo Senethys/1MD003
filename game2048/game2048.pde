@@ -17,15 +17,17 @@ int screenSizeX = (int)screenSize.getWidth();
 int side = 4;      //Amount of tiles per axis
 int target = 2048; //Goal score
 int highest = 2;   //Current (and minimal) score.
+boolean tutorial = false; //Indicates if this is a tutorial run
+int tutorialStep = 1;
 
 int [][] board = new int[side][side];     //The board with values
 int [][] copyBoard = new int[side][side]; //A copy of the board so it can be modifed when iterating over it.
-int [][] prev[] = new int[side][side][3]; //Saved state? 
+int [][] prev[] = new int[side][side][3]; //?
 
 int tileDistance = (screenSizeX / 30);             // tileDistance = Distance between tiles (Original value = 20)
 int tileSize = (screenSizeX - screenSizeY) / 5;    // tileSize = size of the tiles (original value 100)
 int score = 0; 
-int animStart = 10;   //Doesnt seem to do anything
+int animStart = 10;   //How long until animation starts 
 int animLength = 10;  //How long the animation will last
 
 //Button sizes.
@@ -35,8 +37,8 @@ float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeigh
 
 Button undoButton, redoButton, tutorialButton; //Button declarations
 
-
-Stack<int[][]> undoStack = new Stack(); //Undo redo stacks.
+//Undo redo stacks.
+Stack<int[][]> undoStack = new Stack(); 
 Stack<int[][]> redoStack = new Stack();
 
 //Defines colours for the scores.
@@ -53,7 +55,7 @@ color emptyColor = color(232, 248, 245);
 //Different states throughout the game.
 enum State 
 {
-   start, won, running, tutorial, over
+   start, won, running, over
 }
 
 State gameState = State.start;
@@ -99,40 +101,33 @@ void restart() {
 
 //This determines where to spawn the random tile.
 void spawn() {
-  //
+  //Represents empty the coordiantes of the empty tile
   ArrayList<Integer> xs = new ArrayList<Integer>();
   ArrayList<Integer> ys = new ArrayList<Integer>();
   
+  //Add increasingly bigger number for each row unless taken
   for (int j = 0 ; j < side; j++) {
     for (int i = 0 ; i < side; i++) { 
       if (board[j][i]==0) {
-        print(" ", board[i][j]);
-        xs.add(i);
-        ys.add(j);
+        xs.add(i);  //X coordiante
+        ys.add(j); 
     } 
-    println(" ");
   }
 }
-    
-  
   println("X", xs);
   println("Y", ys);
+  //Prints out representation of the board
     for (int j = 0 ; j < side; j++) {
       for (int i = 0 ; i < side; i++) { 
         print(" ", board[j][i]);
       }
       println(" ");
     }
-  
-   println(" ");
-
-
-  
-  
-  
+    
+  println(" ");
   int rnd = (int)random(0, xs.size());
-  int y = ys.get(rnd);
-  int x = xs.get(rnd);
+  int y = ys.get(rnd); //Y coordinate of an empty tile
+  int x = xs.get(rnd); //X coordinate of an empty tile
   board[y][x] = random(0,1) < .5 ? 2 : 4;
   //Amount of of open tiles - 1
   prev[y][x][0] = -1;
@@ -154,8 +149,9 @@ void draw() {
   float gscore = 0;
   
   //Offsets the numbers on the tiles to the center
-  float textvoff = tileSize/3; //Original value 22
-  //Paints the non-empty tiles according to specified distance and ads value to it
+  float textvoff = tileSize/3; 
+  
+  //For each tile check how they should be animated
   for (int j = 0 ; j < side; j++) {
     for (int i = 0 ; i < side; i++) {
       float xt = tileDistance+(tileDistance+tileSize)*i;
@@ -163,15 +159,50 @@ void draw() {
       float x = xt;
       float y = yt;
       int val = board[j][i];
-
-      float dur = (frameCount - animStart)*1.0/animLength;
-          //frame    -     10     <    10     &&     
+    
+      //Duration since animation
+                      //60fps    - 10 * 0.1 
+      float duration = (frameCount - animStart)*1.0/animLength;
+      //Checks if the animation should keep going
+      
+      if(tutorial) {
+        switch(tutorialStep) {
+          case 1: textt("This game is about combining tiles! Try moving the tiles by using the one of arrow keys.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+          break;
+          
+          case 2: textt("As you could see, one or all tiles moved until they reached the border or another tile.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt("Try moving them again in another direction.", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          break; 
+          
+          case 3: textt("Once you succesfully move or combine tiles, a new one will appear in an empty space.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt("Press any arrow key to continue.", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          break;
+          
+          case 4: textt("Only the tiles with the same tile number will combine!", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt("Try to combine some tiles", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          break;
+          
+          case 5: textt("Your goal is to combine enough tiles to reach number 2048!", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt("But be carefull as to not run out of tile-space!", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          break;
+          
+          case 6: textt("You are on your way now.", screenSizeX/6,screenSizeY/5,400,100,color(0),20.0, CENTER);
+                  textt("Good luck!", screenSizeX/6,screenSizeY/3,400,100,color(0),20.0, CENTER);
+          break;
+          
+          case 7: tutorial = false;
+                  tutorialStep = 1;
+          break;
+        }
+      }
+      
+      //If the framecount minus since when the animation is smaller than its animation and prev is bigger than one
       if (frameCount - animStart < animLength && prev[j][i][0]>0) 
       {
         int prevy = tileDistance+(tileDistance+tileSize)*prev[j][i][1];
         int prevx = tileDistance+(tileDistance+tileSize)*prev[j][i][2];
-        x = (x - prevx)*dur + prevx;
-        y = (y - prevy)*dur + prevy;
+        x = (x - prevx)*duration + prevx;
+        y = (y - prevy)*duration + prevy;
         
         if (prev[j][i][0]>1) 
         {
@@ -186,24 +217,26 @@ void draw() {
         }
       }
       
-      if (frameCount - animStart > animLength || prev[j][i][0] >= 0) 
-      {
+      // If the animation minus when its supposed to start is bigger than its lengh prev is 0 or bugger
+      if (frameCount - animStart > animLength || prev[j][i][0] >= 0) {
+
         if (prev[j][i][0]>=2) {
-          float grow = abs(0.5-dur)*2;
+       
+          float grow = abs(0.5-duration)*2;
           if(frameCount - animStart > animLength*3) grow = 1;
           else gscore = grow;
           fill(0,0,255,100); // draws the blue thing around the tile after collision
-          if(!woodFile.isPlaying()) {
-              woodFile.play();
-          }
           rect(x-2*grow, y-2*grow, tileSize+4*grow, tileSize+4*grow, 5);
         }
+
         else  if (prev[j][i][0]==1) {
+          
           fill(255,100);
           rect(x-2, y-2, tileSize+4, tileSize+4, 5);
         }
         fill(200);
         if (val > 0) {
+           
           fill(colorTable[(int) (Math.log(board[j][i]) / Math.log(2)) + 1]);
           rect(x, y, tileSize, tileSize, 5);
           fill(0);
@@ -212,15 +245,17 @@ void draw() {
           text(""+val, x, y + textvoff, tileSize, tileSize);
         }
       }
-      
     }
   }
   
+  //Draw buttons
   undoButton.Draw();
   redoButton.Draw();
   tutorialButton.Draw();
   
-  textt("score: "+score,10,5,100,50,color(0),10.0, LEFT);
+  textt("Score: "+score,10,5,100,50,color(0),10.0, LEFT);
+  
+  //Check states
   if(gameState == State.over) { 
     rectt(0,0,width,height,0,color(255,100)); 
     textt("Gameover! Click to restart", 0,height/2,width,50,color(0),30,CENTER);
@@ -244,10 +279,6 @@ void draw() {
       cheerFile.stop();
       restart(); 
     }
-  }
-  
-  if(gameState == State.tutorial) {
-    restart();
   }
 }
 
@@ -291,6 +322,9 @@ void mousePressed()
 
 void keyPressed() {
   if(gameState == State.running) {
+    if(tutorial) {
+      tutorialStep++;
+    }
     int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0);
     undoStack.push(board);
     int[][] newBoard = null;
@@ -433,8 +467,11 @@ int[][] go(int dy, int dx)
 //Tutorial restarts the game with extra graphics.
 void playTutorial() {
   restart();
+  tutorial = true;
   //Tutorial Code Here
-  
+      textt("This game is about combining tiles. Try yourself by using the keyboard arrows",50,300,400,100,color(0),20.0, CENTER); 
+      textt("Great, do that until you reach 2048 and you'll win! Watch out filling up the board, then you'll lose..",50,150,400,300,color(0),20.0, CENTER); 
+      textt("Click to start a new game",50,350,400,300,color(0),20.0, CENTER); 
 
   draw();
 }
