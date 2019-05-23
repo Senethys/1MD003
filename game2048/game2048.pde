@@ -70,15 +70,16 @@ void settings() {
   //Indicates that this is a phone
   }
   size(screenSizeX / 2, screenSizeY);
-  undoButton = new Button("Undo", undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
-  redoButton = new Button("Redo", redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
-  tutorialButton = new Button("Tutorial", redoButtonX + 70, redoButtonY, redoButtonWidth, redoButtonHeight);
+  undoButton = new Button(language.ui_Language(2), undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
+  redoButton = new Button(language.ui_Language(3), redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
+  tutorialButton = new Button(language.ui_Language(4), redoButtonX + 70, redoButtonY, redoButtonWidth, redoButtonHeight);
   
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav");
   en_img = loadImage("en.png");
   se_img = loadImage("se.png");
+
   //Start the game.
   restart();
   
@@ -103,6 +104,7 @@ void restart() {
   score = 0;
   highest = 2;
   gameState = State.running;
+
 }
 
 //This determines where to spawn the random tile.
@@ -140,6 +142,7 @@ void spawn() {
 }
 
 void draw() {
+    
   background(255);
   noStroke();
   
@@ -251,17 +254,23 @@ void draw() {
           text(""+val, x, y + textvoff, tileSize, tileSize);
         }
       }
-    }
-      image(en_img, screenSizeX / 2.21, 5, 50, 50);
+      if(language.currentLanguage == "English") {
+         image(en_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
+      } else {
+        image(se_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
+      }
 
+    }
   }
   
   //Draw buttons
   undoButton.Draw();
   redoButton.Draw();
   tutorialButton.Draw();
-  
-  textt("Score: "+score,10,5,100,50,color(0),10.0, LEFT);
+  undoButton.label = language.ui_Language(2);
+  redoButton.label = language.ui_Language(3);
+  tutorialButton.label = language.ui_Language(4);
+  textt(language.ui_Language(1)+ " " + score,10,5,100,50,color(0),10.0, LEFT);
   
   //Check states
   if(gameState == State.over) { 
@@ -325,6 +334,11 @@ void mousePressed()
   
   if (tutorialButton.buttonPressed()) {
     playTutorial();
+  }
+        
+
+   if( (mouseX > screenSizeX / 2.22 && mouseX < screenSizeX - (screenSizeX / 2.22)) && (mouseY > 5 && mouseY < screenSizeX/50)) {
+     language.toggleLanguage();
   }
 }
 
@@ -476,10 +490,5 @@ int[][] go(int dy, int dx)
 void playTutorial() {
   restart();
   tutorial = true;
-  //Tutorial Code Here
-      textt("This game is about combining tiles. Try yourself by using the keyboard arrows",50,300,400,100,color(0),20.0, CENTER); 
-      textt("Great, do that until you reach 2048 and you'll win! Watch out filling up the board, then you'll lose..",50,150,400,300,color(0),20.0, CENTER); 
-      textt("Click to start a new game",50,350,400,300,color(0),20.0, CENTER); 
-
   draw();
 }
