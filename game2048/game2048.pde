@@ -19,22 +19,22 @@ int screenSizeX = (int)screenSize.getWidth();
 Language language = new Language();
 
 int side = 4;      //Amount of tiles per axis
-int target = 2048; //Goal score
-int highest = 2;   //Current (and minimal) score.
+int target = 2048; //Goal
+int highest = 2;   //Starting highest tile on the boards
 boolean tutorial = false; //Indicates if this is a tutorial run
 int tutorialStep = 1;
 
-int [][] board = new int[side][side];     //The board with values
+int [][] board = new int[side][side];     //Empty board
 int [][] copyBoard = new int[side][side]; //A copy of the board so it can be modifed when iterating over it.
-int [][] prev[] = new int[side][side][3]; //?
+int [][] prev[] = new int[side][side][3];  // for each tile keeps track of the information like: prev value of the tile, what is the prev x and y values of this tile ann this info is used to implement sliding effect
 
 int tileDistance = (screenSizeX / 30);             // tileDistance = Distance between tiles (Original value = 20)
 int tileSize = (screenSizeX - screenSizeY) / 5;    // tileSize = size of the tiles (original value 100)
 int score = 0; 
 int animStart = 10;   //How long until animation starts 
-int animLength = 10;  //How long the animation will last
+int animLength = 10;  //How long the animation lasts
 
-//Button sizes.
+//Undo Redo Button sizes. coordinates
 float undoButtonX = 70 , undoButtonY = 5, undoButtonWidth = 50, undoButtonHeight = 10;
 float redoButtonX = 140 , redoButtonY = 5, redoButtonWidth = 50, redoButtonHeight = 10;
 
@@ -45,7 +45,7 @@ Button undoButton, redoButton, tutorialButton; //Button declarations
 Stack<int[][]> undoStack = new Stack(); 
 Stack<int[][]> redoStack = new Stack();
 
-//Defines colours for the scores.
+//Defines colours for the tiles.
 color[] colorTable = {
         color(232, 248, 245),color(232, 248, 245), color(209, 242, 235),  color(163, 228, 215),  
         color(118, 215, 196), color(72, 201, 176), color(26, 188, 156), color(23, 165, 137),
@@ -62,8 +62,7 @@ enum State
    start, won, running, over
 }
 
-State gameState = State.start;
-
+State gameState = State.start; 
 
 void settings() {
   if(screenSizeX < screenSizeY) {
@@ -74,17 +73,17 @@ void settings() {
   redoButton = new Button(language.ui_Language(3), redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
   tutorialButton = new Button(language.ui_Language(4), redoButtonX + 70, redoButtonY, redoButtonWidth, redoButtonHeight);
   
+  // creating new sound files 
   cheerFile = new SoundFile(this, "Cheering.mp3");
   gameOverFile = new SoundFile(this, "GameOver.mp3");
   woodFile = new SoundFile(this, "wood.wav");
+  //loading flag images for the translations
   en_img = loadImage("en.png");
   se_img = loadImage("se.png");
 
   //Start the game.
   restart();
   
-  //Prints values of the screen for debgging
-  println("Screen dimensions", screenSizeX,"x", screenSizeY);
 }
 
 //Setup is needed here so that textFont and size can be set.
@@ -93,6 +92,7 @@ void setup() {
   textFont(createFont("Courier", 50));
 }
 
+//starts the game over with the initial values
 void restart() {
   board = new int[4][4];
   copyBoard = new int[4][4];
@@ -104,7 +104,6 @@ void restart() {
   score = 0;
   highest = 2;
   gameState = State.running;
-
 }
 
 //This determines where to spawn the random tile.
@@ -122,22 +121,12 @@ void spawn() {
     } 
   }
 }
-  println("X", xs);
-  println("Y", ys);
-  //Prints out representation of the board
-    for (int j = 0 ; j < side; j++) {
-      for (int i = 0 ; i < side; i++) { 
-        print(" ", board[j][i]);
-      }
-      println(" ");
-    }
-    
-  println(" ");
+
   int rnd = (int)random(0, xs.size());
-  int y = ys.get(rnd); //Y coordinate of an empty tile
-  int x = xs.get(rnd); //X coordinate of an empty tile
-  board[y][x] = random(0,1) < .5 ? 2 : 4;
-  //Amount of of open tiles - 1
+  int y = ys.get(rnd); //Y coordinate of a random tile to be generated
+  int x = xs.get(rnd); //X coordinate of an random tile to be generated
+  board[y][x] = random(0,1) < .5 ? 2 : 4; // puts either 2 or 4 to the new tile
+  //Amount of open tiles - 1
   prev[y][x][0] = -1;
 }
 
@@ -170,7 +159,6 @@ void draw() {
       int val = board[j][i];
     
       //Duration since animation
-                      //60fps    - 10 * 0.1 
       float duration = (frameCount - animStart)*1.0/animLength;
       //Checks if the animation should keep going
       
@@ -226,16 +214,16 @@ void draw() {
         }
       }
       
-      // If the animation minus when its supposed to start is bigger than its lengh prev is 0 or bugger
-      if (frameCount - animStart > animLength || prev[j][i][0] >= 0) {
-
+      // If the animation minus when its supposed to start is bigger than its lengh prev is 0 or bigger
+      if (frameCount - animStart > animLength || prev[j][i][0] >= 0) 
+      {
         if (prev[j][i][0]>=2) {
-       
           float grow = abs(0.5-duration)*2;
           if(frameCount - animStart > animLength*3) grow = 1;
           else gscore = grow;
           fill(0,0,255,100); // draws the blue thing around the tile after collision
           rect(x-2*grow, y-2*grow, tileSize+4*grow, tileSize+4*grow, 5);
+
         }
 
         else  if (prev[j][i][0]==1) {
@@ -254,10 +242,11 @@ void draw() {
           text(""+val, x, y + textvoff, tileSize, tileSize);
         }
       }
+      
       if(language.currentLanguage == "English") {
-         image(en_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
+         image(se_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
       } else {
-        image(se_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
+        image(en_img, screenSizeX / 2.22, 5, screenSizeX/50, screenSizeX/50);
       }
 
     }
@@ -326,7 +315,6 @@ void mousePressed()
   
   if (redoButton.buttonPressed() && !redoStack.empty()) 
   {
-    gameOverFile.play();
     board = redoStack.pop();
     undoStack.push(board);
     draw();
@@ -342,12 +330,13 @@ void mousePressed()
   }
 }
 
+//checks if the key is pressed and if so which key is pressed and calle the necessary function
 void keyPressed() {
   if(gameState == State.running) {
     if(tutorial) {
       tutorialStep++;
     }
-    int dy=keyCode==UP ? -1 : (keyCode==DOWN ? 1 : 0), dx=keyCode==LEFT ? -1 : (keyCode==RIGHT ? 1 : 0);
+    // at each step redo stack cleared because once you make a new move you can not redo before doing undo first
     undoStack.push(board);
     int[][] newBoard = null;
     
@@ -371,7 +360,7 @@ void keyPressed() {
       newBoard = moveRight();
       redoStack.clear();
     }
-    
+    //if any tile is moved
     if (newBoard != null) {
       redoStack.clear();
       board = newBoard;
@@ -381,7 +370,7 @@ void keyPressed() {
         for(int j = 0; j < side; j++)
         {
           if(newBoard[i][j] > highest)
-            highest = newBoard[i][j];
+            highest = newBoard[i][j]; //checks the currents highest tile in the game
         }
       }
     }
@@ -408,12 +397,12 @@ int[][] moveLeft() {
 int[][] moveRight() {
    return go(0, 1);
 }
-
+//checks if there is any available moves left in the game
 boolean gameover() 
 {
-  int[] dx = {    1, -1, 0, 0  } ;
-  int[] dy = {    0, 0, 1, -1  };
-  int[][][] prevbak = prev;
+  int[] dx = {  1, -1, 0, 0  } ;
+  int[] dy = {  0, 0, 1, -1  };
+  int[][][] prevbak = prev; //copy of the prev to work on it just like we do for the board
   boolean out = true;
   int prevscore = score;
   for (int i = 0 ; i < 4; i++) 
@@ -426,6 +415,7 @@ boolean gameover()
   score = prevscore;
   return out;
 }
+// moves all the tiles that can move in the direction of the key pressed
 int[][] go(int dy, int dx) 
 {
   int[][] copyBoard = new int[4][4];
@@ -436,30 +426,31 @@ int[][] go(int dy, int dx)
       copyBoard[j][i] = board[j][i];
     }
   }
+  
   prev = new int[4][4][3];
   boolean moved = false; 
-  if (dx != 0 || dy != 0) 
+  if (dx != 0 || dy != 0) //checks if the tile actually needs to be moved in any direction but 0
   {
-    int d =  dx != 0 ? dx : dy;
-    for (int perp = 0; perp < side; perp++) 
+    int d =  dx != 0 ? dx : dy; // direction will be either horizontal or vertical
+    for (int perp = 0; perp < side; perp++) //iterate as many times as rows/columns 
     {
       for (int along = (d > 0 ? side - 2 : 1); along != (d > 0 ? -1 : side); along-=d) 
       {
         int y = dx != 0 ? perp : along, x = dx != 0 ? along : perp, ty = y, tx = x;
-        if (copyBoard[y][x]==0) continue;
+        if (copyBoard[y][x]==0) continue; // continue if it does not hit any other tile
         for (int i=(dx != 0 ? x : y)+d; i!= (d > 0 ? side : -1); i+=d) 
         {
           int r = dx != 0 ? y : i, c = dx != 0 ? i : x;
-          if (copyBoard[r][c] != 0 && copyBoard[r][c] != copyBoard[y][x]) 
+          if (copyBoard[r][c] != 0 && copyBoard[r][c] != copyBoard[y][x]) // if it hits a tile that it can not merge
             break;
-          if (dx != 0) 
+          if (dx != 0) //iterates over either the row or the column based on the direction
             tx = i; 
           else 
             ty = i;
         }
-        if ( (dx != 0 && tx == x) || (dy != 0 && ty == y)) 
+        if ( (dx != 0 && tx == x) || (dy != 0 && ty == y))  // it continues to check the next spot on the board
           continue;
-        else if (copyBoard[ty][tx]==copyBoard[y][x]) 
+        else if (copyBoard[ty][tx]==copyBoard[y][x]) //if it detects two tiles that can merge hitting
         {
           prev[ty][tx][0] = copyBoard[ty][tx];          
           copyBoard[ty][tx] *= 2;
@@ -476,7 +467,7 @@ int[][] go(int dy, int dx)
       {
         prev[ty][tx][1] = y;
         prev[ty][tx][2] = x;
-        copyBoard[y][x] = 0;
+        copyBoard[y][x] = 0; //the initial value of the tile moved is set to 0 since it moved
       }
     }
    }
