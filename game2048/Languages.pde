@@ -1,3 +1,8 @@
+//Class Language
+//This class holds the different language strings of the app. 
+//Langages are put in a hashmap named after where the string belongs to that are later called depending on the order of the tutorial.
+//Author: Svitri Magnusson
+
 class Language { 
   
   StringList languages = new StringList();
@@ -13,6 +18,7 @@ class Language {
   
   Language() {
     
+    //Fills the containers with language data.
     en_ui.put(1, "Score");
     en_ui.put(2, "Undo");
     en_ui.put(3, "Redo");
@@ -53,6 +59,7 @@ class Language {
     
   }
   
+  //Functions below returns an appropriate string depending on the order of the tutorial or button code.
   String tutorialLanguage(int tutorialStep) {
     String result = "";
     if(currentLanguage == "English") {
@@ -83,6 +90,7 @@ class Language {
     return result;
   }
   
+  //Setter
   void setLanguage(String newLang) {
     currentLanguage = newLang;
   }

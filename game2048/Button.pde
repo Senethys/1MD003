@@ -1,3 +1,7 @@
+//Class Button
+//This class is displays a button with a specific text.
+//Author: Eda Caner
+
 class Button {
   String label;
   float x;    // top left corner x position

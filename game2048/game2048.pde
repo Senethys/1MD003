@@ -1,4 +1,6 @@
-//2048 game by x and y.
+//2048
+//This is a game contains a grid where the goal is to reach 2048 by combining tiles of the same typ.
+//Authors; Eda Caner, Svitri Magnusson, Fredrik Karlsson
 
 import java.util.Stack;     //For undo redo
 import processing.sound.*;  //For sounds
@@ -7,12 +9,12 @@ import java.awt.*;          // For screen dimensions
 SoundFile cheerFile;    //When win 
 SoundFile gameOverFile; //sound when fail
 SoundFile woodFile;     //Sound when tiles collide.
-PImage en_img;
-PImage se_img;
+PImage en_img;          //English flag
+PImage se_img;          //Swedish flag
 
 
 
-//Get the screen size of the device.
+//Get the screen size of the device. DOES NOT WORK FOR MOBILE
 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 int screenSizeY = (int)screenSize.getHeight();
 int screenSizeX = (int)screenSize.getWidth();
@@ -67,7 +69,10 @@ State gameState = State.start;
 void settings() {
   if(screenSizeX < screenSizeY) {
   //Indicates that this is a phone
+  screenSizeX = screenSizeX / 2;
+  screenSizeY = screenSizeY / 2;
   }
+  
   size(screenSizeX / 2, screenSizeY);
   undoButton = new Button(language.ui_Language(2), undoButtonX, undoButtonY, undoButtonWidth, undoButtonHeight);
   redoButton = new Button(language.ui_Language(3), redoButtonX, redoButtonY, redoButtonWidth, redoButtonHeight);
